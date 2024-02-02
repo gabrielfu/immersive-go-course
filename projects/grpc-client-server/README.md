@@ -170,3 +170,24 @@ You'll need to set up a simple configuration to scrape your `prober_server`. Pro
 
 Next, find your custom gauge metric from your `prober_server` in http://localhost:9090/metrics.
 Graph it in http://localhost:9090/graph.
+
+
+## Usage
+
+Server:
+```shell
+go run prober_server/main.go
+```
+
+Client:
+```shell
+go run ./prober_client/main.go --endpoint http://google.com
+```
+
+Prometheus:
+```shell
+docker run \
+    -p 9090:9090 \
+    -v $(pwd)/config/prometheus.yml:/etc/prometheus/prometheus.yml \
+    prom/prometheus
+```
