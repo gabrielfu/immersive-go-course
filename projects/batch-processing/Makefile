@@ -8,6 +8,9 @@ run: outputs
 	docker build --target run -t run .
 	docker run \
 		--mount type=bind,source="$$(pwd)/outputs",target=/outputs \
+		--mount type=bind,source="$$(echo $$HOME)/.aws",target=/root/.aws \
+		-e AWS_DEFAULT_REGION=$$AWS_REGION \
+		-e S3_BUCKET=$$S3_BUCKET \
 		--rm run
 
 test: outputs

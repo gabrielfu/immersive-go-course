@@ -47,11 +47,12 @@ COPY go.sum ./
 RUN go mod download
 
 COPY *.go ./
-COPY inputs /inputs
-RUN mkdir -p /outputs
 
 # This is required for test and run, but for develop it ensures we have a build cache
 RUN go build -o /out
+
+COPY inputs /inputs
+RUN mkdir -p /outputs
 
 ##
 ## TEST
@@ -65,7 +66,7 @@ ENTRYPOINT [ "go", "test", "-v" ]
 ##
 FROM base as develop
 
-COPY .bash_history /root/.bash_history
+# COPY .bash_history /root/.bash_history
 ENTRYPOINT [ "/bin/bash" ]
 
 ##
@@ -74,4 +75,4 @@ ENTRYPOINT [ "/bin/bash" ]
 FROM base as run
 
 WORKDIR /
-ENTRYPOINT /out --input /inputs/gradient.jpg --output /outputs/gradient_bw.jpg
+ENTRYPOINT /out --input /inputs/input.csv --output /outputs/output.csv
