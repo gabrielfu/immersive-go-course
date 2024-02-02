@@ -5,9 +5,45 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"gopkg.in/gographics/imagick.v2/imagick"
 )
+
+func Pipeline(s3 *s3.Client, bucket string, url string, c *Converter) (*Output, error) {
+	log.Printf("[%s] downloading image\n", url)
+	src, err := DownloadImage(url)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[%s] saved to %s\n", url, src)
+
+	// Generate temp file name
+	dest, err := NewTempFileName()
+	if err != nil {
+		return nil, err
+	}
+
+	// Do the conversion
+	log.Printf("[%s] processing image to %s\n", url, dest)
+	err = c.Grayscale(src, dest)
+	if err != nil {
+		return nil, err
+	}
+
+	// Upload to S3
+	log.Printf("[%s] uploading image to s3\n", url)
+	UploadFile(s3, bucket, filepath.Base(dest), dest)
+
+	// Add to the outputs
+	return &Output{
+		Url:    url,
+		Input:  src,
+		Output: dest,
+		S3Url:  "https://" + bucket + ".s3.amazonaws.com/" + filepath.Base(dest),
+	}, nil
+}
 
 func main() {
 	// Accept --input and --output arguments for the images
@@ -39,44 +75,23 @@ func main() {
 		cmd: imagick.ConvertImageCommand,
 	}
 
+	wg := sync.WaitGroup{}
+
 	// Image processing
 	var outputs []Output
 	for _, input := range inputs {
-		log.Println("downloading image from", input.Url)
-		src, err := DownloadImage(input.Url)
-		if err != nil {
-			log.Printf("error: %v\n", err)
-			continue
-		}
-
-		log.Println("processing image", src)
-
-		// Generate temp file name
-		dest, err := NewTempFileName()
-		if err != nil {
-			log.Printf("error: %v\n", err)
-			continue
-		}
-
-		// Do the conversion
-		err = c.Grayscale(src, dest)
-		if err != nil {
-			log.Printf("error: %v\n", err)
-			continue
-		}
-		log.Printf("saved to %s\n", dest)
-
-		// Upload to S3
-		UploadFile(s3, bucket, filepath.Base(dest), dest)
-
-		// Add to the outputs
-		outputs = append(outputs, Output{
-			Url:    input.Url,
-			Input:  src,
-			Output: dest,
-			S3Url:  "https://" + bucket + ".s3.amazonaws.com/" + filepath.Base(dest),
-		})
+		wg.Add(1)
+		go func(url string) {
+			output, err := Pipeline(s3, bucket, url, c)
+			if err != nil {
+				log.Printf("[%s] error: %v\n", url, err)
+			} else {
+				outputs = append(outputs, *output)
+			}
+			wg.Done()
+		}(input.Url)
 	}
+	wg.Wait()
 	log.Println("done processing")
 	log.Println(outputs)
 
