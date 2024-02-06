@@ -15,6 +15,9 @@ func main() {
 	KAFKA_BROKERS := os.Getenv("KAFKA_BROKERS")
 	KAFKA_TOPIC := os.Getenv("KAFKA_TOPIC")
 
+	logger := log.New(os.Stdout, "[Main] ", log.LstdFlags)
+
+	// Kafka producer
 	brokers := strings.Split(KAFKA_BROKERS, ",")
 	producer := NewKafkaClient(brokers, KAFKA_TOPIC)
 
@@ -26,7 +29,7 @@ func main() {
 	// When the scheduler fires, produce message to Kafka
 	go func() {
 		for job := range scheduler.JobsDue {
-			log.Println("Producing message to Kafka:", job)
+			logger.Println("Scheduler triggered job:", job)
 			producer.WriteJob(job)
 		}
 	}()

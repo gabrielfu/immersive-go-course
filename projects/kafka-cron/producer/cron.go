@@ -25,6 +25,10 @@ type Job struct {
 	Command string    `json:"command"`
 }
 
+func (j Job) String() string {
+	return `Job<"` + j.Command + `" @ ` + j.Time.String() + `>`
+}
+
 type Scheduler struct {
 	Specs   []Spec
 	JobsDue chan Job
@@ -33,7 +37,9 @@ type Scheduler struct {
 
 func NewScheduler(size int) *Scheduler {
 	return &Scheduler{
+		Specs:   []Spec{},
 		JobsDue: make(chan Job, size),
+		stop:    make(chan struct{}),
 	}
 }
 
