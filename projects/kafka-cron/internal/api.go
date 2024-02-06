@@ -1,4 +1,4 @@
-package main
+package kron
 
 import "github.com/gin-gonic/gin"
 

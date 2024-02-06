@@ -1,4 +1,4 @@
-package main
+package kron
 
 import (
 	"context"
@@ -16,11 +16,10 @@ type KafkaClient struct {
 }
 
 func NewKafkaClient(brokers []string, topic string) *KafkaClient {
-	w := kafka.NewWriter(kafka.WriterConfig{
-		Brokers:  brokers,
-		Topic:    topic,
-		Balancer: &kafka.LeastBytes{},
-	})
+	w := &kafka.Writer{
+		Addr:  kafka.TCP(brokers...),
+		Topic: topic,
+	}
 	k := &KafkaClient{
 		brokers: brokers,
 		topic:   topic,

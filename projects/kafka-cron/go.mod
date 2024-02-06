@@ -1,4 +1,4 @@
-module kafka-cron
+module kron
 
 go 1.21.1
 

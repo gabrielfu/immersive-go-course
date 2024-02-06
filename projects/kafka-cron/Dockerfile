@@ -5,8 +5,9 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY producer ./producer
-COPY consumer ./consumer
+COPY internal ./internal
+COPY cmd/producer ./producer
+COPY cmd/consumer ./consumer
 
 RUN mkdir -p /out
 RUN go build -o /out/producer ./producer

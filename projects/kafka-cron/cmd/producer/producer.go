@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	kron "kron/internal"
 )
 
 const (
@@ -19,10 +21,10 @@ func main() {
 
 	// Kafka producer
 	brokers := strings.Split(KAFKA_BROKERS, ",")
-	producer := NewKafkaClient(brokers, KAFKA_TOPIC)
+	producer := kron.NewKafkaClient(brokers, KAFKA_TOPIC)
 
 	// Job scheduler
-	scheduler := NewScheduler(BUFFER_SIZE)
+	scheduler := kron.NewScheduler(BUFFER_SIZE)
 	scheduler.Start()
 	defer scheduler.Stop()
 
@@ -35,12 +37,12 @@ func main() {
 	}()
 
 	var jobHandler = func(schedule, command string) error {
-		s, err := ParseCronSchedule(schedule)
+		s, err := kron.ParseCronSchedule(schedule)
 		if err != nil {
 			return err
 		}
 		return scheduler.Add(s, command)
 	}
 
-	ServeAPI(jobHandler, PORT)
+	kron.ServeAPI(jobHandler, PORT)
 }
