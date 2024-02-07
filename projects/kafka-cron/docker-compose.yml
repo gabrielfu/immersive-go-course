@@ -36,15 +36,32 @@ services:
       KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
     depends_on:
       - zoo1
-    
+    healthcheck:
+        test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka1:19092", "--list"]
+        interval: 10s
+        timeout: 30s
+        retries: 5
+
   producer:
     build: .
     container_name: producer
     depends_on:
-      - kafka1
+      kafka1:
+        condition: service_healthy
     environment:
-      KAFKA_BROKER: kafka1:9092
+      KAFKA_BROKERS: kafka1:19092
       KAFKA_TOPIC: test
     ports:
       - "8080:8080"
     command: "/app/producer"
+    
+  consumer:
+    build: .
+    container_name: consumer
+    depends_on:
+      kafka1:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKERS: kafka1:19092
+      KAFKA_TOPIC: test
+    command: "/app/consumer"
