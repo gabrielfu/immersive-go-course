@@ -10,6 +10,7 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -25,6 +26,7 @@ func NewKafkaClient(brokers []string, topic string) *KafkaClient {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: brokers,
 		Topic:   topic,
+		GroupID: "kron",
 	})
 	w := &kafka.Writer{
 		Addr:  kafka.TCP(brokers...),
@@ -61,7 +63,7 @@ func (k *KafkaClient) CreateTopic() error {
 	topicConfigs := []kafka.TopicConfig{
 		{
 			Topic:             k.topic,
-			NumPartitions:     1,
+			NumPartitions:     2,
 			ReplicationFactor: 1,
 		},
 	}
@@ -79,6 +81,7 @@ func (k *KafkaClient) WriteJob(job Job) error {
 		return err
 	}
 	message := kafka.Message{
+		Key:   []byte(uuid.New().String()),
 		Value: b,
 	}
 	return k.w.WriteMessages(context.Background(), message)
