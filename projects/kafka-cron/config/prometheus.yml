@@ -1,0 +1,13 @@
+global:
+  scrape_interval: "10s"
+  scrape_timeout: "10s"
+  evaluation_interval: "10s"
+
+scrape_configs:
+  - job_name: "kafka"
+    static_configs:
+      - targets: ["kafka1:7071"]
+  
+  - job_name: "kron"
+    static_configs:
+      - targets: ["consumer1:2112", "consumer2:2112"]

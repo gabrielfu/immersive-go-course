@@ -51,6 +51,10 @@ func main() {
 	label := prometheus.Labels{
 		"consumer_id": CONSUMER_ID,
 	}
+	prometheus.Register(opsFailed)
+	prometheus.Register(opsSuccessful)
+	prometheus.Register(opsDuration)
+	prometheus.Register(opsDelay)
 
 	go func() {
 		for {
