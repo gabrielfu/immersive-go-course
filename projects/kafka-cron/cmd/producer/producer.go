@@ -29,7 +29,6 @@ func main() {
 
 	// Job scheduler
 	scheduler := kron.NewScheduler(BUFFER_SIZE)
-	scheduler.Start()
 	defer scheduler.Stop()
 
 	// When the scheduler fires, produce message to Kafka
@@ -41,7 +40,6 @@ func main() {
 				logger.Println("Error writing job to Kafka:", err)
 				continue
 			}
-			logger.Println("Job written to Kafka:", job)
 		}
 	}()
 
@@ -50,7 +48,12 @@ func main() {
 		if err != nil {
 			return err
 		}
-		return scheduler.Add(s, command)
+		err = scheduler.Add(s, command)
+		if err != nil {
+			return err
+		}
+		logger.Println("Added job:", command)
+		return nil
 	}
 
 	kron.ServeAPI(jobHandler, PORT)

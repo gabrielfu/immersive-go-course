@@ -5,5 +5,5 @@
 
 - Use cli to add a job.
     ```shell
-    go run ./cmd/cli --schedule "0 0 * * *" --command "echo hello"
+    go run ./cmd/cli --schedule "0 0 0 * * *" --command "echo hello"
     ```

@@ -63,7 +63,7 @@ func (k *KafkaClient) CreateTopic() error {
 	topicConfigs := []kafka.TopicConfig{
 		{
 			Topic:             k.topic,
-			NumPartitions:     2,
+			NumPartitions:     4,
 			ReplicationFactor: 1,
 		},
 	}

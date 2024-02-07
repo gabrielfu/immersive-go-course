@@ -6,7 +6,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-var parser = cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+var parser = cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 
 func ParseCronSchedule(scheduleSpec string) (cron.Schedule, error) {
 	return parser.Parse(scheduleSpec)
@@ -30,15 +30,15 @@ func (j Job) String() string {
 }
 
 type Scheduler struct {
-	Specs   []Spec
 	JobsDue chan Job
+	specs   []*Spec
 	stop    chan struct{}
 }
 
 func NewScheduler(size int) *Scheduler {
 	return &Scheduler{
-		Specs:   []Spec{},
 		JobsDue: make(chan Job, size),
+		specs:   []*Spec{},
 		stop:    make(chan struct{}),
 	}
 }
@@ -46,35 +46,34 @@ func NewScheduler(size int) *Scheduler {
 // Add adds a new spec to the scheduler
 func (s *Scheduler) Add(schedule cron.Schedule, command string) error {
 	next := schedule.Next(time.Now())
-	s.Specs = append(s.Specs, Spec{
+	spec := &Spec{
 		Schedule: schedule,
 		Next:     next,
 		Command:  command,
-	})
+	}
+	s.specs = append(s.specs, spec)
+	go s.start(spec)
 	return nil
 }
 
-// Start starts the scheduler
-func (s *Scheduler) Start() {
-	go func() {
-		for {
-			select {
-			case <-s.stop:
-				return
-			default:
-			}
-
-			for i, spec := range s.Specs {
-				if spec.Next.Before(time.Now()) {
-					s.JobsDue <- Job{
-						Time:    spec.Next,
-						Command: spec.Command,
-					}
-					s.Specs[i].Next = spec.Schedule.Next(time.Now())
-				}
-			}
+func (s *Scheduler) start(spec *Spec) {
+	ticker := time.NewTicker(time.Until(spec.Next))
+	for {
+		select {
+		case <-s.stop:
+			ticker.Stop()
+			return
+		default:
 		}
-	}()
+
+		<-ticker.C
+		s.JobsDue <- Job{
+			Time:    spec.Next,
+			Command: spec.Command,
+		}
+		spec.Next = spec.Schedule.Next(time.Now())
+		ticker.Reset(time.Until(spec.Next))
+	}
 }
 
 // Stop stops the scheduler
