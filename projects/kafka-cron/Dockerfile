@@ -17,8 +17,6 @@ RUN go build -o /out/consumer ./consumer
 
 FROM debian:bullseye-slim
 
-COPY bin /bin
-RUN chmod +x /bin/*
 COPY --from=build /out/producer /app/producer
 COPY --from=build /out/consumer /app/consumer
 
